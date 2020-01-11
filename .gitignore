@@ -1,0 +1,13 @@
+# データファイルを無視する
+/input
+/output
+/model
+/download_codes
+/prepare_data
+/env*
+/**/.ipynb_checkpoints/
+*catboost_info/
+*.h5
+*.pkl
+*.pt
+*.npy
