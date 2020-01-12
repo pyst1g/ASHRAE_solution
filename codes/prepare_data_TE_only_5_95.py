@@ -245,39 +245,7 @@ test = df.iloc[len(target):].copy().reset_index(drop=True)
 df['is_day_off_or_holiday'] = (df['weekday'] >= 5) | df['IsHoliday']
 
 
-# In[10]:
 
-
-def make_fraction(col1, col2):
-    col2_frac = train.groupby(['meter', col1, col2])[['meter_reading']].mean()
-    col2_frac_idx = col2_frac.index
-    col2_frac_sum = col2_frac.groupby(col1).sum().rename(columns = {'meter_reading':'sum'})
-    col2_frac = col2_frac.merge(col2_frac_sum, on = col1, how='left')
-    col2_frac.index = col2_frac_idx
-    col2_frac['frac_{}_{}'.format(col1, col2)] = col2_frac['meter_reading'] / col2_frac['sum']
-    col2_frac = col2_frac[['meter_reading', 'frac_{}_{}'.format(col1, col2)]].rename(columns={'meter_reading':'target_mean_{}_{}'.format(col1,col2)})
-    return col2_frac
-
-
-building_weekday_frac = make_fraction('building_id', 'weekday')
-building_hour_frac = make_fraction('building_id', 'hour')
-building_day_frac = make_fraction('building_id', 'day')
-building_hourofweek_frac = make_fraction('building_id', 'hourofweek')
-
-# primary_weekday_frac = make_fraction('primary_use', 'weekday')
-# primary_hour_frac = make_fraction('primary_use', 'hour')
-# primary_day_frac = make_fraction('primary_use', 'day')
-
-
-
-
-# In[11]:
-
-
-df = df.merge(building_weekday_frac, on=['meter', 'building_id', 'weekday'], how='left')
-df = df.merge(building_hour_frac, on=['meter', 'building_id', 'hour'], how='left')
-df = df.merge(building_day_frac, on=['meter', 'building_id', 'day'], how='left')
-df = df.merge(building_hourofweek_frac, on=['meter', 'building_id', 'hourofweek'], how='left')
 
 # In[12]:
 
@@ -393,6 +361,6 @@ test_fe = df.iloc[len(target):].copy().reset_index(drop=True)
 # In[21]:
 
 
-train_fe.to_feather('../prepare_data/train_fe.ftr')
-test_fe.to_feather('../prepare_data/test_fe.ftr')
+train_fe.to_feather('../prepare_data/train_fe_TE_only_5_95.ftr')
+test_fe.to_feather('../prepare_data/test_fe_TE_only_5_95.ftr')
 

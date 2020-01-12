@@ -264,12 +264,6 @@ building_hour_frac = make_fraction('building_id', 'hour')
 building_day_frac = make_fraction('building_id', 'day')
 building_hourofweek_frac = make_fraction('building_id', 'hourofweek')
 
-# primary_weekday_frac = make_fraction('primary_use', 'weekday')
-# primary_hour_frac = make_fraction('primary_use', 'hour')
-# primary_day_frac = make_fraction('primary_use', 'day')
-
-
-
 
 # In[11]:
 
@@ -278,6 +272,7 @@ df = df.merge(building_weekday_frac, on=['meter', 'building_id', 'weekday'], how
 df = df.merge(building_hour_frac, on=['meter', 'building_id', 'hour'], how='left')
 df = df.merge(building_day_frac, on=['meter', 'building_id', 'day'], how='left')
 df = df.merge(building_hourofweek_frac, on=['meter', 'building_id', 'hourofweek'], how='left')
+
 
 # In[12]:
 
@@ -310,13 +305,13 @@ df = df.merge(building_hourofweek_frac, on=['meter', 'building_id', 'hourofweek'
 # df = df.merge(building_meter_average, on=['building_id', 'meter'], how='left')
 
 
-# 建物ごとの分位点(95パーセンタイル)
-building_meter_95 = train.groupby(['building_id', 'meter'])['meter_reading'].apply(lambda arr: np.percentile(arr, 95)).rename('building_meter_95')
-df = df.merge(building_meter_95, on=['building_id', 'meter'], how='left')
+# # 建物ごとの分位点(95パーセンタイル)
+# building_meter_95 = train.groupby(['building_id', 'meter'])['meter_reading'].apply(lambda arr: np.percentile(arr, 95)).rename('building_meter_95')
+# df = df.merge(building_meter_95, on=['building_id', 'meter'], how='left')
 
-# 建物ごとの分位点(5パーセンタイル)
-building_meter_5 = train.groupby(['building_id', 'meter'])['meter_reading'].apply(lambda arr: np.percentile(arr, 5)).rename('building_meter_5')
-df = df.merge(building_meter_5, on=['building_id', 'meter'], how='left')
+# # 建物ごとの分位点(5パーセンタイル)
+# building_meter_5 = train.groupby(['building_id', 'meter'])['meter_reading'].apply(lambda arr: np.percentile(arr, 5)).rename('building_meter_5')
+# df = df.merge(building_meter_5, on=['building_id', 'meter'], how='left')
 
 
 
@@ -393,6 +388,6 @@ test_fe = df.iloc[len(target):].copy().reset_index(drop=True)
 # In[21]:
 
 
-train_fe.to_feather('../prepare_data/train_fe.ftr')
-test_fe.to_feather('../prepare_data/test_fe.ftr')
+train_fe.to_feather('../prepare_data/train_fe_TE_only_frac.ftr')
+test_fe.to_feather('../prepare_data/test_fe_TE_only_frac.ftr')
 
