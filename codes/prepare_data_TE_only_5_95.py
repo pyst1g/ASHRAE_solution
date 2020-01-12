@@ -233,6 +233,7 @@ df = df.merge(weather, on=['site_id', 'timestamp'], how='left')
 df['day'] = df['timestamp'].dt.day #// 3
 df['hour'] = df['timestamp'].dt.hour
 df['weekday'] = df['timestamp'].dt.weekday
+df['hourofweek'] = 24 * df['weekday'] + df['hour']
 
 train = df.iloc[:len(target)].copy().reset_index(drop=True)
 train['meter_reading'] = target#.values

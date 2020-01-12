@@ -233,6 +233,7 @@ df = df.merge(weather, on=['site_id', 'timestamp'], how='left')
 df['day'] = df['timestamp'].dt.day #// 3
 df['hour'] = df['timestamp'].dt.hour
 df['weekday'] = df['timestamp'].dt.weekday
+df['hourofweek'] = 24 * df['weekday'] + df['hour']
 
 train = df.iloc[:len(target)].copy().reset_index(drop=True)
 train['meter_reading'] = target#.values
@@ -255,7 +256,8 @@ def make_fraction(col1, col2):
     col2_frac = col2_frac.merge(col2_frac_sum, on = col1, how='left')
     col2_frac.index = col2_frac_idx
     col2_frac['frac_{}_{}'.format(col1, col2)] = col2_frac['meter_reading'] / col2_frac['sum']
-    col2_frac = col2_frac[['meter_reading', 'frac_{}_{}'.format(col1, col2)]].rename(columns={'meter_reading':'target_mean_{}_{}'.format(col1,col2)})
+#     col2_frac = col2_frac[['meter_reading', 'frac_{}_{}'.format(col1, col2)]].rename(columns={'meter_reading':'target_mean_{}_{}'.format(col1,col2)})
+    col2_frac = col2_frac[['frac_{}_{}'.format(col1, col2)]]
     return col2_frac
 
 
