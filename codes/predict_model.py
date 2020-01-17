@@ -24,6 +24,7 @@ arg('train_file', type=str)
 arg('test_file', type=str)
 arg('--learning_rate', type=float, default=0.05)
 arg('--num_leaves', type=int, default=31)
+arg('--n_estimators', type=int, default=500)
 args = parser.parse_args()#args=['1', '0.5','train_fe.ftr', 'test_fe.ftr'])
 
 # print(args)
@@ -61,7 +62,7 @@ def meter_predict(meter, model, X_test, best_iteration, iteration_mul=1.5):
     return pd.concat(y_pred).sort_index()
 
 # load model
-load_name = '../model/model_use_{}_seed{}_leave{}_lr{}.pkl'.format(args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''))
+load_name = '../model/model_use_{}_seed{}_leave{}_lr{}_tree{}.pkl'.format(args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''), args.n_estimators)
 with open(load_name, 'rb') as f:
     models = pickle.load(f)
 
@@ -94,7 +95,7 @@ for meter in [0,1,2,3]:
             best_iteration[meter][i] = 200
 
 #load model
-load_name = '../model/model_all_use_{}_seed{}_leave{}_lr{}.pkl'.format(args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''))
+load_name = '../model/model_all_use_{}_seed{}_leave{}_lr{}_tree{}.pkl'.format(args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''), args.n_estimators)
 with open(load_name, 'rb') as f:
     models_all = pickle.load(f)
 
@@ -112,7 +113,7 @@ submission = pd.read_csv('../input/sample_submission.csv')
 submission['meter_reading'] = (np.expm1(y_preds))
 submission.loc[submission['meter_reading']<0, 'meter_reading'] = 0
 
-save_name = '../output/use_{}_seed{}_leave{}_lr{}_mul{}.csv'.format(args.train_file.replace('.ftr', ''), args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''), str(args.iteration_mul).replace('.', ''))
+save_name = '../output/use_{}_seed{}_leave{}_lr{}_tree{}_mul{}.csv'.format(args.train_file.replace('.ftr', ''), args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''), args.n_estimators, str(args.iteration_mul).replace('.', ''))
 submission.to_csv(save_name, index=False)
 
 submission.head()

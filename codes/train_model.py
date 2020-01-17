@@ -119,7 +119,7 @@ for i in [3,2,1,0]:
 
 # save model
 
-save_name = '../model/model_use_{}_seed{}_leave{}_lr{}.pkl'.format(args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''))
+save_name = '../model/model_use_{}_seed{}_leave{}_lr{}_tree{}.pkl'.format(args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''), args.n_estimators)
 with open(save_name, 'wb') as f:
     pickle.dump(models, f)
 
@@ -184,11 +184,11 @@ for meter in [0,1,2,3]:
 models_all = dict()
 for i in [3, 2, 1, 0]:
     print('meter {} start at {}'.format(i,time.ctime()))
-    models_all[i] = meter_fit_all(i, new_train_fe.drop('timestamp', axis=1), new_target, random_state=args.seed, n_estimators=args.n_estimators, **lgb_params)
+    models_all[i] = meter_fit_all(i, new_train_fe.drop('timestamp', axis=1), new_target, random_state=args.seed, n_estimators=int(args.n_estimators * 1.5), **lgb_params)
 #     models_all[i] = meter_fit_all(i, train_fe.drop('timestamp', axis=1), target_fe, random_state=args.seed, n_estimators=args.n_estimators, **lgb_params)
 
 #save model
 
-save_name = '../model/model_all_use_{}_seed{}_leave{}_lr{}.pkl'.format(args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''))
+save_name = '../model/model_all_use_{}_seed{}_leave{}_lr{}_tree{}.pkl'.format(args.train_file.replace('.ftr', ''),args.seed, args.num_leaves, str(args.learning_rate).replace('.', ''), args.n_estimators)
 with open(save_name, 'wb') as f:
     pickle.dump(models_all, f)

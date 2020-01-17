@@ -4,6 +4,7 @@
 /model
 /download_codes
 /prepare_data
+/old_submission
 /env*
 /**/.ipynb_checkpoints/
 *catboost_info/
