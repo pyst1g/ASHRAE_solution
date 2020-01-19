@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
-#!/usr/bin/env python
-# coding: utf-8
-
 import numpy as np
 import pandas as pd
 
@@ -15,8 +9,7 @@ from datetime import date, datetime, timedelta
 from tqdm import tqdm
 
 
-# In[2]:
-
+# read data
 
 train = pd.read_csv('../input/train.csv', parse_dates=['timestamp'])
 test = pd.read_csv('../input/test.csv', parse_dates=['timestamp'])
@@ -25,12 +18,7 @@ weather_train = pd.read_csv('../input/weather_train.csv', parse_dates=['timestam
 weather_test = pd.read_csv('../input/weather_test.csv', parse_dates=['timestamp'])
 
 
-# In[3]:
-
-
-# 覚え書き
-# 連続で同じ値を取るやつを除去
-# ただし、同じ値を取るやつが最小値だった場合は除去しない(電気データの場合、最小値=休みの日とかの可能性があるため)
+# drop bad rows
 
 del_list = list()
 
@@ -92,7 +80,6 @@ train['meter_reading'] = np.log1p(train['meter_reading'])
 train = train.reset_index(drop=True)
 
 
-# In[5]:
 
 
 weather = pd.concat([weather_train, weather_test], axis=0).reset_index(drop=True)
@@ -116,7 +103,6 @@ for idx in location_data.index:
     weather.loc[weather['site_id']==idx, 'timestamp'] += timedelta(hours=int(location_data.loc[idx, 'UTC_offset']))
 
 
-# In[6]:
 
 
 def fill_weather_dataset(weather_df):
@@ -189,7 +175,6 @@ weather = fill_weather_dataset(weather)
 weather['timestamp'] = pd.to_datetime(weather['timestamp'])
 
 
-# In[7]:
 
 
 ### 休日情報
@@ -217,7 +202,6 @@ weather.loc[holiday_idx, 'IsHoliday'] = 1
 weather['IsHoliday'] = weather['IsHoliday'].astype(np.uint8)
 
 
-# In[8]:
 
 
 target = train['meter_reading'].values
@@ -233,41 +217,73 @@ df = df.merge(weather, on=['site_id', 'timestamp'], how='left')
 df['day'] = df['timestamp'].dt.day #// 3
 df['hour'] = df['timestamp'].dt.hour
 df['weekday'] = df['timestamp'].dt.weekday
-df['hourofweek'] = 24 * df['weekday'] + df['hour']
 
 train = df.iloc[:len(target)].copy().reset_index(drop=True)
 train['meter_reading'] = target#.values
 test = df.iloc[len(target):].copy().reset_index(drop=True)
 
 
-# In[9]:
 
 
 df['is_day_off_or_holiday'] = (df['weekday'] >= 5) | df['IsHoliday']
 
 
 
-# # minmaxscalingして予測したい場合
-# building_meter_95 = train.groupby(['building_id', 'meter'])['meter_reading'].apply(lambda arr: np.percentile(arr, 95)).rename('building_meter_95')
-# building_meter_95 += 0.5
-# train = train.merge(building_meter_95, on=['building_id', 'meter'], how='left')
 
-# train['meter_reading'] /= train['building_meter_95']
-# target = train['meter_reading'].values
+# def make_fraction(col1, col2):
+#     col2_frac = train.groupby(['meter', col1, col2])[['meter_reading']].mean()
+#     col2_frac_idx = col2_frac.index
+#     col2_frac_sum = col2_frac.groupby(col1).sum().rename(columns = {'meter_reading':'sum'})
+#     col2_frac = col2_frac.merge(col2_frac_sum, on = col1, how='left')
+#     col2_frac.index = col2_frac_idx
+#     col2_frac['frac_{}_{}'.format(col1, col2)] = col2_frac['meter_reading'] / col2_frac['sum']
+# #     col2_frac = col2_frac[['meter_reading', 'frac_{}_{}'.format(col1, col2)]].rename(columns={'meter_reading':'target_mean_{}_{}'.format(col1,col2)})
+#     col2_frac = col2_frac[['frac_{}_{}'.format(col1, col2)]]
+#     return col2_frac
+
+def make_fraction(col1, col2):
+    col2_frac = train.groupby([col1, col2])[['meter_reading']].median()
+    col2_frac_idx = col2_frac.index
+    col2_frac_sum = col2_frac.groupby(col1).sum().rename(columns = {'meter_reading':'sum'})
+    col2_frac = col2_frac.merge(col2_frac_sum, on = col1, how='left')
+    col2_frac.index = col2_frac_idx
+    col2_frac['frac_{}_{}'.format(col1, col2)] = col2_frac['meter_reading'] / col2_frac['sum']
+    col2_frac = col2_frac[['frac_{}_{}'.format(col1, col2)]]
+    return col2_frac
 
 
-# ### 一部属性をカテゴリカル変数に変換
+
+building_weekday_frac = make_fraction('building_id', 'weekday')
+building_hour_frac = make_fraction('building_id', 'hour')
+building_day_frac = make_fraction('building_id', 'day')
+
+primary_weekday_frac = make_fraction('primary_use', 'weekday')
+primary_hour_frac = make_fraction('primary_use', 'hour')
+primary_day_frac = make_fraction('primary_use', 'day')
 
 
-# In[14]:
+df = df.merge(building_weekday_frac, on=['building_id', 'weekday'], how='left')
+df = df.merge(building_hour_frac, on=['building_id', 'hour'], how='left')
+df = df.merge(building_day_frac, on=['building_id', 'day'], how='left')
+
+df = df.merge(primary_weekday_frac, on=['primary_use', 'weekday'], how='left')
+df = df.merge(primary_hour_frac, on=['primary_use', 'hour'], how='left')
+df = df.merge(primary_day_frac, on=['primary_use', 'day'], how='left')
 
 
+# 建物ごとの分位点(95パーセンタイル)
+building_meter_95 = train.groupby(['building_id', 'meter'])['meter_reading'].apply(lambda arr: np.percentile(arr, 95)).rename('building_meter_95')
+df = df.merge(building_meter_95, on=['building_id', 'meter'], how='left')
+
+# 建物ごとの分位点(5パーセンタイル)
+building_meter_5 = train.groupby(['building_id', 'meter'])['meter_reading'].apply(lambda arr: np.percentile(arr, 5)).rename('building_meter_5')
+df = df.merge(building_meter_5, on=['building_id', 'meter'], how='left')
+
+### 一部属性をカテゴリカル変数に変換
 is_categorical = ['meter', 'building_id', 'site_id', 'primary_use', 'hour', 'day', 'weekday']
 df[is_categorical] = df[is_categorical].astype('category')
 df['year_built_cat'] = df['year_built'].astype('category')
 
-
-# In[15]:
 
 
 drop_columns = []#, 'hour', 'day', 'weekday']
@@ -275,51 +291,11 @@ drop_df = df[drop_columns]
 df = df.drop(drop_columns, axis=1)
 
 
-# In[16]:
-
-
-# train = df.iloc[:len(target)].copy().reset_index(drop=True)
-# train['meter_reading'] = target#.values
-# df = df.merge(train.groupby(['building_id','weekday'])['meter_reading'].agg(['mean', 'median']), on=['building_id','weekday'], how='left')
-
-
-# In[17]:
-
-
 train_fe = df.iloc[:len(target)].copy().reset_index(drop=True)
 train_fe['meter_reading'] = target#.values
 test_fe = df.iloc[len(target):].copy().reset_index(drop=True)
 
 
-# In[18]:
-
-
-# target_fe = train_fe['meter_reading']
-# train_fe = train_fe.drop('meter_reading', axis=1)
-
-
-# In[19]:
-
-
-# train_fe_all = df.iloc[:len(target)].copy()
-# train_fe_all['meter_reading'] = target#.values
-
-# test_fe_all = df.iloc[len(target):].copy()
-# test_fe_all['row_id'] = row_id.values
-
-# with open('../input/train_fe_all.zip', 'wb') as f:
-#     pickle.dump(train_fe_all, f)
-
-# with open('../input/test_fe_all_2017.zip', 'wb') as f:
-#     pickle.dump(test_fe_all.query('timestamp < 20180101'), f)
-    
-# with open('../input/test_fe_all_2018.zip', 'wb') as f:
-#     pickle.dump(test_fe_all.query('20180101 <= timestamp'), f)
-
-
-# In[21]:
-
-
-train_fe.to_feather('../prepare_data/train_fe_noTE.ftr')
-test_fe.to_feather('../prepare_data/test_fe_noTE.ftr')
+train_fe.to_feather('../prepare_data/train_fe.ftr')
+test_fe.to_feather('../prepare_data/test_fe.ftr')
 
