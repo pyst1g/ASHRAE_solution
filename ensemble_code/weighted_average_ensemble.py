@@ -177,4 +177,4 @@ new_submission = pd.read_csv(f'{code_path}/../input/sample_submission.csv')
 
 new_submission['meter_reading'] = ensembled_pred.values
 
-new_submission.to_csv(f'{code_path}/../output/submission_my_leak_validation.csv', index=False)
+new_submission.to_csv(f'{code_path}/../output/submission.csv', index=False)
